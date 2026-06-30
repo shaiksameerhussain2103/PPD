@@ -230,7 +230,7 @@ body {
 
 .image-rows-head {
   display: grid;
-  grid-template-columns: minmax(260px, 2.2fr) minmax(120px, 0.8fr) minmax(240px, 1.3fr) minmax(180px, 1fr);
+  grid-template-columns: 2.3fr 0.8fr 1.7fr 1.2fr;
   gap: 10px;
   color: var(--muted);
   font-size: 0.84rem;
@@ -257,7 +257,7 @@ body {
 
 .image-row {
   display: grid;
-  grid-template-columns: minmax(260px, 2.2fr) minmax(120px, 0.8fr) minmax(240px, 1.3fr) minmax(180px, 1fr);
+  grid-template-columns: 2.3fr 0.8fr 1.7fr 1.2fr;
   gap: 10px;
   align-items: center;
 }
@@ -316,6 +316,12 @@ button:focus-visible {
   display: grid;
   grid-template-columns: 1fr 1fr 0.9fr;
   gap: 8px;
+}
+
+.image-row input,
+.image-row select {
+  min-height: 38px;
+  padding: 0.55rem 0.65rem;
 }
 
 .row-actions {

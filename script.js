@@ -362,16 +362,13 @@
     state.images.forEach((img) => {
       const widthMm = img.widthInput ? unitToMm(Number(img.widthInput), img.overrideUnit) : unitToMm(defaultPassport.width, defaultPassport.unit);
       const heightMm = img.heightInput ? unitToMm(Number(img.heightInput), img.overrideUnit) : unitToMm(defaultPassport.height, defaultPassport.unit);
-      const rawW = Math.max(1, mmToPx(widthMm, dpi));
-      const rawH = Math.max(1, mmToPx(heightMm, dpi));
-      const oriented = chooseBestOrientation(rawW, rawH, usableW, usableH, gap);
+      const tileW = Math.max(1, mmToPx(widthMm, dpi));
+      const tileH = Math.max(1, mmToPx(heightMm, dpi));
 
       for (let copy = 0; copy < Math.max(1, Number(img.copies) || 1); copy += 1) {
-        tiles.push({ img, tileW: oriented.w, tileH: oriented.h, rotated: oriented.rotated });
+        tiles.push({ img, tileW, tileH, rotated: false });
       }
     });
-
-    tiles.sort((a, b) => b.tileH * b.tileW - a.tileH * a.tileW);
 
     const pages = [];
     let page = { items: [] };
@@ -387,7 +384,6 @@
       }
 
       if (y + tile.tileH > pageH - margin + 0.01) {
-        centerRows(page.items, margin, usableW);
         pages.push(page);
         page = { items: [] };
         x = margin;
@@ -411,50 +407,9 @@
     });
 
     if (page.items.length || !pages.length) {
-      centerRows(page.items, margin, usableW);
       pages.push(page);
     }
     return { pages, pageW, pageH, margin, paperLabel: paper.name, defaultPassport };
-  }
-
-  function chooseBestOrientation(w, h, usableW, usableH, gap) {
-    const normalCols = Math.max(0, Math.floor((usableW + gap) / (w + gap)));
-    const normalRows = Math.max(0, Math.floor((usableH + gap) / (h + gap)));
-    const normalCapacity = normalCols * normalRows;
-
-    const rotatedCols = Math.max(0, Math.floor((usableW + gap) / (h + gap)));
-    const rotatedRows = Math.max(0, Math.floor((usableH + gap) / (w + gap)));
-    const rotatedCapacity = rotatedCols * rotatedRows;
-
-    if (rotatedCapacity > normalCapacity) {
-      return { w: h, h: w, rotated: true };
-    }
-    return { w, h, rotated: false };
-  }
-
-  function centerRows(items, margin, usableW) {
-    if (!items.length) return;
-    const rows = new Map();
-    items.forEach((item) => {
-      const key = String(Math.round(item.y * 100) / 100);
-      if (!rows.has(key)) rows.set(key, []);
-      rows.get(key).push(item);
-    });
-
-    rows.forEach((rowItems) => {
-      let minX = Number.POSITIVE_INFINITY;
-      let maxX = Number.NEGATIVE_INFINITY;
-      rowItems.forEach((item) => {
-        minX = Math.min(minX, item.x);
-        maxX = Math.max(maxX, item.x + item.tileW);
-      });
-      const rowWidth = maxX - minX;
-      const targetStart = margin + Math.max(0, (usableW - rowWidth) / 2);
-      const shift = targetStart - minX;
-      rowItems.forEach((item) => {
-        item.x += shift;
-      });
-    });
   }
 
   function renderPreview() {

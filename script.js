@@ -622,21 +622,24 @@
 
   function exportPdf() {
     const layout = createLayoutPages(EXPORT_DPI);
+    if (!layout.pages.length || !layout.pages.some((page) => page.items.length)) return;
     const images = layout.pages.map((page) => {
       const canvas = document.createElement('canvas');
       canvas.width = layout.pageW;
       canvas.height = layout.pageH;
       const ctx = canvas.getContext('2d');
       drawPage(ctx, page, layout.pageW, layout.pageH, layout.margin, EXPORT_DPI);
-      return canvas.toDataURL('image/jpeg', 0.98).split(',')[1];
+      return canvas.toDataURL('image/jpeg', 0.98);
     });
     const pdfBytes = buildPdfFromImages(images, layout.pageW, layout.pageH, EXPORT_DPI);
     downloadBlob(new Blob([pdfBytes], { type: 'application/pdf' }), 'passport-photo-sheets.pdf');
   }
 
-  function printSheets() {
+  async function printSheets() {
     const layout = createLayoutPages(EXPORT_DPI);
+    if (!layout.pages.length || !layout.pages.some((page) => page.items.length)) return;
     els.printPages.innerHTML = '';
+    const imageLoaders = [];
     layout.pages.forEach((page) => {
       const canvas = document.createElement('canvas');
       canvas.width = layout.pageW;
@@ -647,49 +650,115 @@
       wrapper.className = 'print-page';
       const img = document.createElement('img');
       img.src = canvas.toDataURL('image/png');
+      imageLoaders.push(waitForImageLoad(img));
       wrapper.appendChild(img);
       els.printPages.appendChild(wrapper);
     });
+
+    await Promise.all(imageLoaders);
+    await waitForNextPaint();
     window.print();
   }
 
-  function buildPdfFromImages(base64Images, widthPx, heightPx, dpi) {
+  function buildPdfFromImages(dataUrls, widthPx, heightPx, dpi) {
     const widthPt = (widthPx / dpi) * 72;
     const heightPt = (heightPx / dpi) * 72;
-    const objects = ['', ''];
-    const pages = [];
+    const encoder = new TextEncoder();
+    const parts = [];
+    let offset = 0;
 
-    const addObj = (body) => {
-      const index = objects.length + 1;
-      objects.push(`${index} 0 obj\n${body}\nendobj\n`);
-      return index;
+    const pushBytes = (bytes) => {
+      parts.push(bytes);
+      offset += bytes.length;
     };
 
-    base64Images.forEach((image, index) => {
-      const bytes = base64ToUint8Array(image);
-      const imageObj = addObj(`<< /Type /XObject /Subtype /Image /Width ${widthPx} /Height ${heightPx} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${bytes.length} >>\nstream\n${uint8ArrayToBinary(bytes)}\nendstream`);
-      const stream = `q\n${widthPt} 0 0 ${heightPt} 0 0 cm\n/Im${index} Do\nQ`;
-      const contentObj = addObj(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
-      const pageObj = addObj(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${widthPt} ${heightPt}] /Resources << /XObject << /Im${index} ${imageObj} 0 R >> >> /Contents ${contentObj} 0 R >>`);
-      pages.push(pageObj);
+    const pushText = (text) => {
+      pushBytes(encoder.encode(text));
+    };
+
+    const pageCount = dataUrls.length;
+    const objectCount = 2 + pageCount * 3;
+    const offsets = new Array(objectCount + 1).fill(0);
+
+    const getImageObjNo = (i) => 3 + i * 3;
+    const getContentObjNo = (i) => 4 + i * 3;
+    const getPageObjNo = (i) => 5 + i * 3;
+
+    const writeObject = (objNo, writer) => {
+      offsets[objNo] = offset;
+      pushText(`${objNo} 0 obj\n`);
+      writer();
+      pushText('\nendobj\n');
+    };
+
+    pushText('%PDF-1.4\n');
+
+    writeObject(1, () => {
+      pushText('<< /Type /Catalog /Pages 2 0 R >>');
     });
 
-    objects[1] = `2 0 obj\n<< /Type /Pages /Kids [${pages.map((p) => `${p} 0 R`).join(' ')}] /Count ${pages.length} >>\nendobj\n`;
-    objects[0] = '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n';
+    writeObject(2, () => {
+      const kids = Array.from({ length: pageCount }, (_, i) => `${getPageObjNo(i)} 0 R`).join(' ');
+      pushText(`<< /Type /Pages /Kids [${kids}] /Count ${pageCount} >>`);
+    });
 
-    let pdf = '%PDF-1.4\n';
-    const offsets = [0];
-    objects.forEach((obj) => {
-      offsets.push(pdf.length);
-      pdf += obj;
+    dataUrls.forEach((dataUrl, index) => {
+      const jpegBase64 = dataUrl.split(',')[1] || '';
+      const imageBytes = base64ToUint8Array(jpegBase64);
+      const imageObjNo = getImageObjNo(index);
+      const contentObjNo = getContentObjNo(index);
+      const pageObjNo = getPageObjNo(index);
+      const imageName = `Im${index}`;
+
+      writeObject(imageObjNo, () => {
+        pushText(`<< /Type /XObject /Subtype /Image /Width ${widthPx} /Height ${heightPx} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBytes.length} >>\nstream\n`);
+        pushBytes(imageBytes);
+        pushText('\nendstream');
+      });
+
+      const contentStream = `q\n${widthPt} 0 0 ${heightPt} 0 0 cm\n/${imageName} Do\nQ`;
+      writeObject(contentObjNo, () => {
+        pushText(`<< /Length ${contentStream.length} >>\nstream\n${contentStream}\nendstream`);
+      });
+
+      writeObject(pageObjNo, () => {
+        pushText(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${widthPt} ${heightPt}] /Resources << /XObject << /${imageName} ${imageObjNo} 0 R >> >> /Contents ${contentObjNo} 0 R >>`);
+      });
     });
-    const xref = pdf.length;
-    pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-    offsets.slice(1).forEach((off) => {
-      pdf += `${String(off).padStart(10, '0')} 00000 n \n`;
+
+    const xrefOffset = offset;
+    pushText(`xref\n0 ${objectCount + 1}\n`);
+    pushText('0000000000 65535 f \n');
+    for (let i = 1; i <= objectCount; i += 1) {
+      pushText(`${String(offsets[i]).padStart(10, '0')} 00000 n \n`);
+    }
+    pushText(`trailer\n<< /Size ${objectCount + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
+
+    return concatUint8Arrays(parts);
+  }
+
+  function waitForImageLoad(img) {
+    return new Promise((resolve) => {
+      if (img.complete && img.naturalWidth > 0) {
+        resolve();
+        return;
+      }
+
+      const onDone = () => {
+        img.removeEventListener('load', onDone);
+        img.removeEventListener('error', onDone);
+        resolve();
+      };
+
+      img.addEventListener('load', onDone, { once: true });
+      img.addEventListener('error', onDone, { once: true });
     });
-    pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-    return new TextEncoder().encode(pdf);
+  }
+
+  function waitForNextPaint() {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
   }
 
   function readFileAsDataUrl(file) {
@@ -765,12 +834,14 @@
     return bytes;
   }
 
-  function uint8ArrayToBinary(bytes) {
-    let out = '';
-    const step = 0x8000;
-    for (let i = 0; i < bytes.length; i += step) {
-      out += String.fromCharCode.apply(null, bytes.subarray(i, i + step));
-    }
+  function concatUint8Arrays(chunks) {
+    const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const out = new Uint8Array(total);
+    let offset = 0;
+    chunks.forEach((chunk) => {
+      out.set(chunk, offset);
+      offset += chunk.length;
+    });
     return out;
   }
 })();

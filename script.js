@@ -349,14 +349,11 @@
 
   function createLayoutPages(dpi) {
     const paper = getPaperSetting();
-    const pageW = mmToPx(unitToMm(paper.width, paper.unit), dpi);
-    const pageH = mmToPx(unitToMm(paper.height, paper.unit), dpi);
+    const basePageW = mmToPx(unitToMm(paper.width, paper.unit), dpi);
+    const basePageH = mmToPx(unitToMm(paper.height, paper.unit), dpi);
     const margin = mmToPx(MARGIN_MM, dpi);
     const gap = mmToPx(GAP_MM, dpi);
     const defaultPassport = getPassportSetting();
-
-    const usableW = Math.max(1, pageW - margin * 2);
-    const usableH = Math.max(1, pageH - margin * 2);
 
     const tiles = [];
     state.images.forEach((img) => {
@@ -370,6 +367,26 @@
       }
     });
 
+    const portrait = buildSimplePages(tiles, basePageW, basePageH, margin, gap);
+    const landscape = buildSimplePages(tiles, basePageH, basePageW, margin, gap);
+
+    const useLandscape = landscape.pages.length < portrait.pages.length
+      || (landscape.pages.length === portrait.pages.length && (landscape.pages[0]?.items.length || 0) > (portrait.pages[0]?.items.length || 0));
+
+    const chosen = useLandscape ? landscape : portrait;
+    return {
+      pages: chosen.pages,
+      pageW: chosen.pageW,
+      pageH: chosen.pageH,
+      margin,
+      paperLabel: paper.name,
+      defaultPassport
+    };
+  }
+
+  function buildSimplePages(tiles, pageW, pageH, margin, gap) {
+    const usableW = Math.max(1, pageW - margin * 2);
+    const usableH = Math.max(1, pageH - margin * 2);
     const pages = [];
     let page = { items: [] };
     let x = margin;
@@ -384,6 +401,7 @@
       }
 
       if (y + tile.tileH > pageH - margin + 0.01) {
+        centerRows(page.items, margin, usableW);
         pages.push(page);
         page = { items: [] };
         x = margin;
@@ -407,9 +425,36 @@
     });
 
     if (page.items.length || !pages.length) {
+      centerRows(page.items, margin, usableW);
       pages.push(page);
     }
-    return { pages, pageW, pageH, margin, paperLabel: paper.name, defaultPassport };
+
+    return { pages, pageW, pageH };
+  }
+
+  function centerRows(items, margin, usableW) {
+    if (!items.length) return;
+    const rows = new Map();
+    items.forEach((item) => {
+      const key = String(Math.round(item.y * 100) / 100);
+      if (!rows.has(key)) rows.set(key, []);
+      rows.get(key).push(item);
+    });
+
+    rows.forEach((rowItems) => {
+      let minX = Number.POSITIVE_INFINITY;
+      let maxX = Number.NEGATIVE_INFINITY;
+      rowItems.forEach((item) => {
+        minX = Math.min(minX, item.x);
+        maxX = Math.max(maxX, item.x + item.tileW);
+      });
+      const rowWidth = maxX - minX;
+      const targetStart = margin + Math.max(0, (usableW - rowWidth) / 2);
+      const shift = targetStart - minX;
+      rowItems.forEach((item) => {
+        item.x += shift;
+      });
+    });
   }
 
   function renderPreview() {

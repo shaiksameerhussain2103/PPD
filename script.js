@@ -4,8 +4,8 @@
   const MM_PER_INCH = 25.4;
   const PREVIEW_DPI = 96;
   const EXPORT_DPI = 300;
-  const MARGIN_MM = 6;
-  const GAP_MM = 3;
+  const MARGIN_MM = 2;
+  const GAP_MM = 1;
 
   const paperSizes = {
     photo_4x6: { id: 'photo_4x6', name: '4x6 Photo Paper (Default)', width: 4, height: 6, unit: 'in' },
@@ -34,7 +34,15 @@
     previewPages: [],
     showCutMarks: true,
     showCropMarks: true,
-    showRulers: false
+    showRulers: false,
+    stats: {
+      totalImages: 0,
+      totalCopies: 0,
+      utilization: 0,
+      remaining: 100,
+      paper: '4x6',
+      printSize: '35x45 mm'
+    }
   };
 
   const els = {};
@@ -54,15 +62,14 @@
   function cache() {
     [
       'uploadStep', 'dropZone', 'fileInput', 'browseBtn', 'clearAllBtn',
-      'imageCards', 'imageCountText',
+      'imageRows', 'imageCountText',
       'paperSizeSelect', 'paperUnitSelect', 'paperWidthInput', 'paperHeightInput',
       'paperUnitWrap', 'paperWidthWrap', 'paperHeightWrap',
       'passportPresetSelect', 'passportUnitSelect', 'passportWidthInput', 'passportHeightInput',
       'passportUnitWrap', 'passportWidthWrap', 'passportHeightWrap',
       'showCutMarks', 'showCropMarks', 'showRulers',
       'sheetCanvas', 'prevPageBtn', 'nextPageBtn', 'pageIndicator', 'previewMeta',
-      'downloadPngBtn', 'downloadJpegBtn', 'downloadPdfBtn', 'printBtn', 'printPages',
-      'statDifferentImages', 'statTotalCopies', 'statPaperSize', 'statPrintSize', 'statUtilization', 'statRemaining'
+      'downloadPngBtn', 'downloadJpegBtn', 'downloadPdfBtn', 'printBtn', 'printPages'
     ].forEach((id) => {
       els[id] = document.getElementById(id);
     });
@@ -198,63 +205,50 @@
   }
 
   function renderImageCards() {
-    els.imageCards.innerHTML = '';
+    els.imageRows.innerHTML = '';
     els.imageCountText.textContent = `${state.images.length} different image${state.images.length === 1 ? '' : 's'}`;
 
     if (!state.images.length) {
       const empty = document.createElement('div');
-      empty.className = 'empty-cards';
+      empty.className = 'empty-row';
       empty.textContent = 'Upload photos to create image cards automatically.';
-      els.imageCards.appendChild(empty);
+      els.imageRows.appendChild(empty);
       renderStats();
       return;
     }
 
     state.images.forEach((item) => {
-      const card = document.createElement('article');
-      card.className = 'image-card';
-      card.innerHTML = `
-        <img class="image-preview" src="${escapeHtmlAttr(item.dataUrl)}" alt="${escapeHtmlAttr(item.fileName)} preview" />
-        <div class="img-title">${escapeHtml(item.fileName)}</div>
-        <div class="img-meta">${item.image.naturalWidth} x ${item.image.naturalHeight} px</div>
-
-        <div class="field-grid two">
-          <label>
-            <span>Copies</span>
-            <input type="number" min="1" step="1" data-id="${item.id}" data-field="copies" value="${item.copies}" />
-          </label>
-          <label>
-            <span>Unit</span>
-            <select data-id="${item.id}" data-field="overrideUnit">
-              <option value="mm" ${item.overrideUnit === 'mm' ? 'selected' : ''}>mm</option>
-              <option value="cm" ${item.overrideUnit === 'cm' ? 'selected' : ''}>cm</option>
-              <option value="in" ${item.overrideUnit === 'in' ? 'selected' : ''}>inch</option>
-            </select>
-          </label>
-          <label>
-            <span>Width (optional)</span>
-            <input type="number" min="0" step="0.1" data-id="${item.id}" data-field="widthInput" value="${item.widthInput}" placeholder="Auto" />
-          </label>
-          <label>
-            <span>Height (optional)</span>
-            <input type="number" min="0" step="0.1" data-id="${item.id}" data-field="heightInput" value="${item.heightInput}" placeholder="Auto" />
-          </label>
+      const row = document.createElement('article');
+      row.className = 'image-row';
+      row.innerHTML = `
+        <div class="image-cell">
+          <img class="row-thumb" src="${escapeHtmlAttr(item.dataUrl)}" alt="${escapeHtmlAttr(item.fileName)} preview" />
+          <div class="row-name">
+            <strong>${escapeHtml(item.fileName)}</strong>
+            <small>${item.image.naturalWidth} x ${item.image.naturalHeight} px</small>
+          </div>
         </div>
-
-        <div class="toggle-row">
-          <label><input type="checkbox" data-id="${item.id}" data-field="aspectLocked" ${item.aspectLocked ? 'checked' : ''} /> Lock aspect ratio</label>
+        <div>
+          <input type="number" min="1" step="1" data-id="${item.id}" data-field="copies" value="${item.copies}" aria-label="Copies" />
         </div>
-
-        <div class="card-actions">
+        <div class="row-size">
+          <input type="number" min="0" step="0.1" data-id="${item.id}" data-field="widthInput" value="${item.widthInput}" placeholder="Width" aria-label="Width" />
+          <input type="number" min="0" step="0.1" data-id="${item.id}" data-field="heightInput" value="${item.heightInput}" placeholder="Height" aria-label="Height" />
+          <select data-id="${item.id}" data-field="overrideUnit" aria-label="Unit">
+            <option value="mm" ${item.overrideUnit === 'mm' ? 'selected' : ''}>mm</option>
+            <option value="cm" ${item.overrideUnit === 'cm' ? 'selected' : ''}>cm</option>
+            <option value="in" ${item.overrideUnit === 'in' ? 'selected' : ''}>inch</option>
+          </select>
+        </div>
+        <div class="row-actions">
           <button class="btn btn-ghost" data-action="replace" data-id="${item.id}" type="button">Replace</button>
-          <button class="btn btn-ghost" data-action="duplicate" data-id="${item.id}" type="button">Duplicate</button>
           <button class="btn btn-ghost" data-action="delete" data-id="${item.id}" type="button">Delete</button>
         </div>
       `;
-      els.imageCards.appendChild(card);
+      els.imageRows.appendChild(row);
     });
 
-    els.imageCards.querySelectorAll('[data-field]').forEach((input) => {
+    els.imageRows.querySelectorAll('[data-field]').forEach((input) => {
       input.addEventListener('input', () => {
         const id = input.dataset.id;
         const field = input.dataset.field;
@@ -269,31 +263,15 @@
           image[field] = input.value;
         }
 
-        if ((field === 'widthInput' || field === 'heightInput') && image.aspectLocked) {
-          syncAspectFields(image, field);
-          renderImageCards();
-        }
         renderPreview();
       });
     });
 
-    els.imageCards.querySelectorAll('[data-action]').forEach((btn) => {
+    els.imageRows.querySelectorAll('[data-action]').forEach((btn) => {
       btn.addEventListener('click', () => handleCardAction(btn.dataset.action, btn.dataset.id));
     });
 
     renderStats();
-  }
-
-  function syncAspectFields(image, changedField) {
-    const ratio = image.image.naturalWidth / image.image.naturalHeight;
-    const widthVal = Number(image.widthInput);
-    const heightVal = Number(image.heightInput);
-    if (changedField === 'widthInput' && widthVal > 0) {
-      image.heightInput = (widthVal / ratio).toFixed(2);
-    }
-    if (changedField === 'heightInput' && heightVal > 0) {
-      image.widthInput = (heightVal * ratio).toFixed(2);
-    }
   }
 
   function handleCardAction(action, id) {
@@ -305,17 +283,6 @@
       state.images.splice(idx, 1);
       if (!state.images.length) els.uploadStep.classList.remove('minimized');
       state.pageIndex = 0;
-      renderImageCards();
-      renderPreview();
-      return;
-    }
-
-    if (action === 'duplicate') {
-      state.images.splice(idx + 1, 0, {
-        ...image,
-        id: cryptoId(),
-        fileName: image.fileName.replace(/(\.[^.]*)?$/, '-copy$1')
-      });
       renderImageCards();
       renderPreview();
       return;
@@ -401,34 +368,134 @@
 
     tiles.sort((a, b) => b.tileH * b.tileW - a.tileH * a.tileW);
 
+    const usable = {
+      x: margin,
+      y: margin,
+      w: Math.max(1, pageW - margin * 2),
+      h: Math.max(1, pageH - margin * 2)
+    };
+
     const pages = [];
-    let page = { items: [] };
-    let x = margin;
-    let y = margin;
-    let rowH = 0;
+    let currentPage = createEmptyPage(usable);
 
     tiles.forEach((tile) => {
-      const fitsRow = x + tile.tileW <= pageW - margin;
-      if (!fitsRow) {
-        x = margin;
-        y += rowH + gap;
-        rowH = 0;
+      const placed = placeTileInPage(currentPage, tile, gap);
+      if (!placed) {
+        pages.push(currentPage);
+        currentPage = createEmptyPage(usable);
+        const fallbackPlaced = placeTileInPage(currentPage, tile, gap);
+        if (!fallbackPlaced) {
+          const clipped = {
+            ...tile,
+            x: usable.x,
+            y: usable.y,
+            tileW: Math.min(tile.tileW, usable.w),
+            tileH: Math.min(tile.tileH, usable.h),
+            rotated: false
+          };
+          currentPage.items.push(clipped);
+        }
       }
-      const fitsPage = y + tile.tileH <= pageH - margin;
-      if (!fitsPage) {
-        pages.push(page);
-        page = { items: [] };
-        x = margin;
-        y = margin;
-        rowH = 0;
-      }
-      page.items.push({ ...tile, x, y });
-      x += tile.tileW + gap;
-      rowH = Math.max(rowH, tile.tileH);
     });
 
-    if (page.items.length || !pages.length) pages.push(page);
+    if (currentPage.items.length || !pages.length) pages.push(currentPage);
     return { pages, pageW, pageH, margin, paperLabel: paper.name, defaultPassport };
+  }
+
+  function createEmptyPage(usableRect) {
+    return {
+      items: [],
+      freeRects: [{ x: usableRect.x, y: usableRect.y, w: usableRect.w, h: usableRect.h }]
+    };
+  }
+
+  function placeTileInPage(page, tile, gap) {
+    let best = null;
+    page.freeRects.forEach((rect, rectIndex) => {
+      const options = [
+        { w: tile.tileW, h: tile.tileH, rotated: false },
+        { w: tile.tileH, h: tile.tileW, rotated: true }
+      ];
+      options.forEach((opt) => {
+        if (opt.w <= rect.w && opt.h <= rect.h) {
+          const waste = rect.w * rect.h - opt.w * opt.h;
+          const shortSideLeftover = Math.min(rect.w - opt.w, rect.h - opt.h);
+          if (
+            !best ||
+            waste < best.waste ||
+            (waste === best.waste && shortSideLeftover < best.shortSideLeftover)
+          ) {
+            best = { rectIndex, rect, opt, waste, shortSideLeftover };
+          }
+        }
+      });
+    });
+
+    if (!best) return false;
+
+    const placed = {
+      ...tile,
+      x: best.rect.x,
+      y: best.rect.y,
+      tileW: best.opt.w,
+      tileH: best.opt.h,
+      rotated: best.opt.rotated
+    };
+    page.items.push(placed);
+
+    splitFreeRects(page, best.rectIndex, placed, gap);
+    pruneContainedFreeRects(page);
+    return true;
+  }
+
+  function splitFreeRects(page, usedRectIndex, placed, gap) {
+    const used = page.freeRects[usedRectIndex];
+    const px = placed.x;
+    const py = placed.y;
+    const pw = placed.tileW;
+    const ph = placed.tileH;
+
+    page.freeRects.splice(usedRectIndex, 1);
+
+    const right = {
+      x: px + pw + gap,
+      y: used.y,
+      w: used.x + used.w - (px + pw + gap),
+      h: used.h
+    };
+    const bottom = {
+      x: used.x,
+      y: py + ph + gap,
+      w: used.w,
+      h: used.y + used.h - (py + ph + gap)
+    };
+    const left = {
+      x: used.x,
+      y: used.y,
+      w: px - used.x - gap,
+      h: used.h
+    };
+    const top = {
+      x: used.x,
+      y: used.y,
+      w: used.w,
+      h: py - used.y - gap
+    };
+
+    [right, bottom, left, top].forEach((rect) => {
+      if (rect.w > 1 && rect.h > 1) {
+        page.freeRects.push(rect);
+      }
+    });
+  }
+
+  function pruneContainedFreeRects(page) {
+    page.freeRects = page.freeRects.filter((rect, index, all) => {
+      return !all.some((other, otherIndex) => {
+        if (index === otherIndex) return false;
+        return rect.x >= other.x && rect.y >= other.y && rect.x + rect.w <= other.x + other.w && rect.y + rect.h <= other.y + other.h;
+      });
+    });
   }
 
   function renderPreview() {
@@ -570,14 +637,12 @@
       })
     );
 
-    els.statDifferentImages.textContent = String(state.images.length);
-    els.statTotalCopies.textContent = String(totalCopies);
-    els.statPaperSize.textContent = paper.name;
-    els.statPrintSize.textContent = allSizes.size <= 1
-      ? `${passport.width}x${passport.height} ${passport.unit}`
-      : 'Mixed sizes';
-    els.statUtilization.textContent = `${utilization.toFixed(1)}%`;
-    els.statRemaining.textContent = `${Math.max(0, 100 - utilization).toFixed(1)}%`;
+    state.stats.totalImages = state.images.length;
+    state.stats.totalCopies = totalCopies;
+    state.stats.paper = paper.name;
+    state.stats.printSize = allSizes.size <= 1 ? `${passport.width}x${passport.height} ${passport.unit}` : 'Mixed sizes';
+    state.stats.utilization = utilization;
+    state.stats.remaining = Math.max(0, 100 - utilization);
   }
 
   function exportRaster(format) {

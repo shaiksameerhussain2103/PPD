@@ -44,145 +44,106 @@
       </div>
     </section>
 
-    <main class="layout-grid">
-      <section class="left-col">
-        <section class="panel step" aria-label="Step 2 uploaded images panel">
-          <div class="step-head">
-            <span class="step-number">Step 2</span>
-            <div>
-              <h2>Uploaded Images</h2>
-              <p id="imageCountText">0 different images</p>
-            </div>
+    <main class="simple-flow">
+      <section class="panel step" aria-label="Step 2 uploaded images panel">
+        <div class="step-head">
+          <span class="step-number">Step 2</span>
+          <div>
+            <h2>Uploaded Images</h2>
+            <p id="imageCountText">0 different images</p>
           </div>
-          <div id="imageCards" class="cards"></div>
-        </section>
-
-        <section class="panel step" aria-label="Step 4 paper settings">
-          <div class="step-head">
-            <span class="step-number">Step 4</span>
-            <div>
-              <h2>Paper Settings</h2>
-              <p>Choose paper preset or custom dimensions.</p>
-            </div>
-          </div>
-          <div class="field-grid two">
-            <label>
-              <span>Paper Size</span>
-              <select id="paperSizeSelect"></select>
-            </label>
-            <label id="paperUnitWrap" class="hidden">
-              <span>Unit</span>
-              <select id="paperUnitSelect">
-                <option value="mm">mm</option>
-                <option value="cm">cm</option>
-                <option value="in">inch</option>
-              </select>
-            </label>
-            <label id="paperWidthWrap" class="hidden">
-              <span>Width</span>
-              <input id="paperWidthInput" type="number" min="1" step="0.1" />
-            </label>
-            <label id="paperHeightWrap" class="hidden">
-              <span>Height</span>
-              <input id="paperHeightInput" type="number" min="1" step="0.1" />
-            </label>
-          </div>
-        </section>
-
-        <section class="panel step" aria-label="Step 5 passport settings">
-          <div class="step-head">
-            <span class="step-number">Step 5</span>
-            <div>
-              <h2>Passport Size</h2>
-              <p>Default size applied unless image card has overrides.</p>
-            </div>
-          </div>
-          <div class="field-grid two">
-            <label>
-              <span>Preset</span>
-              <select id="passportPresetSelect"></select>
-            </label>
-            <label id="passportUnitWrap" class="hidden">
-              <span>Unit</span>
-              <select id="passportUnitSelect">
-                <option value="mm">mm</option>
-                <option value="cm">cm</option>
-                <option value="in">inch</option>
-              </select>
-            </label>
-            <label id="passportWidthWrap" class="hidden">
-              <span>Width</span>
-              <input id="passportWidthInput" type="number" min="1" step="0.1" />
-            </label>
-            <label id="passportHeightWrap" class="hidden">
-              <span>Height</span>
-              <input id="passportHeightInput" type="number" min="1" step="0.1" />
-            </label>
-          </div>
-        </section>
+        </div>
+        <div class="image-rows-head" aria-hidden="true">
+          <span>Image</span>
+          <span>Copies</span>
+          <span>Size (optional)</span>
+          <span>Actions</span>
+        </div>
+        <div id="imageRows" class="image-rows"></div>
       </section>
 
-      <section class="mid-col">
-        <section class="panel step" aria-label="Step 3 live sheet preview">
-          <div class="step-head preview-head">
-            <span class="step-number">Step 3</span>
-            <div>
-              <h2>Live Sheet Preview</h2>
-              <p id="previewMeta">Preview updates in real time.</p>
-            </div>
-            <div class="preview-nav">
-              <button id="prevPageBtn" class="btn btn-ghost" type="button">Prev</button>
-              <span id="pageIndicator">Page 1 / 1</span>
-              <button id="nextPageBtn" class="btn btn-ghost" type="button">Next</button>
-            </div>
+      <section class="panel step" aria-label="Step 3 preview and sheet settings">
+        <div class="step-head">
+          <span class="step-number">Step 3</span>
+          <div>
+            <h2>Sheet Preview</h2>
+            <p id="previewMeta">Preview updates in real time.</p>
           </div>
+          <div class="preview-nav">
+            <button id="prevPageBtn" class="btn btn-ghost" type="button">Prev</button>
+            <span id="pageIndicator">Page 1 / 1</span>
+            <button id="nextPageBtn" class="btn btn-ghost" type="button">Next</button>
+          </div>
+        </div>
 
-          <div class="preview-toggles">
-            <label><input id="showCutMarks" type="checkbox" checked /> Cut Marks</label>
-            <label><input id="showCropMarks" type="checkbox" checked /> Crop Marks</label>
-            <label><input id="showRulers" type="checkbox" /> Rulers</label>
-          </div>
+        <div class="field-grid four">
+          <label>
+            <span>Sheet Size</span>
+            <select id="paperSizeSelect"></select>
+          </label>
+          <label>
+            <span>Default Passport Size</span>
+            <select id="passportPresetSelect"></select>
+          </label>
+          <label id="paperUnitWrap" class="hidden">
+            <span>Sheet Unit</span>
+            <select id="paperUnitSelect">
+              <option value="mm">mm</option>
+              <option value="cm">cm</option>
+              <option value="in">inch</option>
+            </select>
+          </label>
+          <label id="paperWidthWrap" class="hidden">
+            <span>Sheet Width</span>
+            <input id="paperWidthInput" type="number" min="1" step="0.1" />
+          </label>
+          <label id="paperHeightWrap" class="hidden">
+            <span>Sheet Height</span>
+            <input id="paperHeightInput" type="number" min="1" step="0.1" />
+          </label>
+          <label id="passportUnitWrap" class="hidden">
+            <span>Passport Unit</span>
+            <select id="passportUnitSelect">
+              <option value="mm">mm</option>
+              <option value="cm">cm</option>
+              <option value="in">inch</option>
+            </select>
+          </label>
+          <label id="passportWidthWrap" class="hidden">
+            <span>Passport Width</span>
+            <input id="passportWidthInput" type="number" min="1" step="0.1" />
+          </label>
+          <label id="passportHeightWrap" class="hidden">
+            <span>Passport Height</span>
+            <input id="passportHeightInput" type="number" min="1" step="0.1" />
+          </label>
+        </div>
 
-          <div class="preview-shell">
-            <canvas id="sheetCanvas"></canvas>
-          </div>
-        </section>
+        <div class="preview-toggles">
+          <label><input id="showCutMarks" type="checkbox" checked /> Cut Marks</label>
+          <label><input id="showCropMarks" type="checkbox" checked /> Crop Marks</label>
+          <label><input id="showRulers" type="checkbox" /> Rulers</label>
+        </div>
 
-        <section class="panel step" aria-label="Step 7 download and print">
-          <div class="step-head">
-            <span class="step-number">Step 7</span>
-            <div>
-              <h2>Download And Print</h2>
-              <p>Export high-quality sheets or print directly.</p>
-            </div>
-          </div>
-          <div class="download-actions">
-            <button id="downloadPngBtn" class="btn btn-secondary" type="button">Download Sheet (PNG)</button>
-            <button id="downloadJpegBtn" class="btn btn-secondary" type="button">Download Sheet (JPEG)</button>
-            <button id="downloadPdfBtn" class="btn btn-secondary" type="button">Download Sheet (PDF)</button>
-            <button id="printBtn" class="btn btn-primary" type="button">Print Sheet</button>
-          </div>
-        </section>
+        <div class="preview-shell">
+          <canvas id="sheetCanvas"></canvas>
+        </div>
       </section>
 
-      <section class="right-col">
-        <section class="panel step" aria-label="Step 6 live statistics">
-          <div class="step-head">
-            <span class="step-number">Step 6</span>
-            <div>
-              <h2>Live Statistics</h2>
-              <p>Automatically updated sheet analytics.</p>
-            </div>
+      <section class="panel step" aria-label="Step 4 download and print">
+        <div class="step-head">
+          <span class="step-number">Step 4</span>
+          <div>
+            <h2>Download And Print</h2>
+            <p>Export as PNG, JPEG, PDF, or print directly.</p>
           </div>
-          <div class="stats-grid">
-            <article><h3 id="statDifferentImages">0</h3><p>Total Different Images</p></article>
-            <article><h3 id="statTotalCopies">0</h3><p>Total Copies</p></article>
-            <article><h3 id="statPaperSize">4x6</h3><p>Paper Size</p></article>
-            <article><h3 id="statPrintSize">35x45 mm</h3><p>Estimated Print Size</p></article>
-            <article><h3 id="statUtilization">0%</h3><p>Sheet Utilization</p></article>
-            <article><h3 id="statRemaining">100%</h3><p>Remaining Empty Area</p></article>
-          </div>
-        </section>
+        </div>
+        <div class="download-actions">
+          <button id="downloadPngBtn" class="btn btn-secondary" type="button">Download PNG</button>
+          <button id="downloadJpegBtn" class="btn btn-secondary" type="button">Download JPEG</button>
+          <button id="downloadPdfBtn" class="btn btn-secondary" type="button">Download PDF</button>
+          <button id="printBtn" class="btn btn-primary" type="button">Print Sheet</button>
+        </div>
       </section>
     </main>
 

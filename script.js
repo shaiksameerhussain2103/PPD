@@ -355,145 +355,104 @@
     const gap = mmToPx(GAP_MM, dpi);
     const defaultPassport = getPassportSetting();
 
+    const usableW = Math.max(1, pageW - margin * 2);
+    const usableH = Math.max(1, pageH - margin * 2);
+
     const tiles = [];
     state.images.forEach((img) => {
       const widthMm = img.widthInput ? unitToMm(Number(img.widthInput), img.overrideUnit) : unitToMm(defaultPassport.width, defaultPassport.unit);
       const heightMm = img.heightInput ? unitToMm(Number(img.heightInput), img.overrideUnit) : unitToMm(defaultPassport.height, defaultPassport.unit);
-      const tileW = Math.max(1, mmToPx(widthMm, dpi));
-      const tileH = Math.max(1, mmToPx(heightMm, dpi));
+      const rawW = Math.max(1, mmToPx(widthMm, dpi));
+      const rawH = Math.max(1, mmToPx(heightMm, dpi));
+      const oriented = chooseBestOrientation(rawW, rawH, usableW, usableH, gap);
+
       for (let copy = 0; copy < Math.max(1, Number(img.copies) || 1); copy += 1) {
-        tiles.push({ img, tileW, tileH });
+        tiles.push({ img, tileW: oriented.w, tileH: oriented.h, rotated: oriented.rotated });
       }
     });
 
     tiles.sort((a, b) => b.tileH * b.tileW - a.tileH * a.tileW);
 
-    const usable = {
-      x: margin,
-      y: margin,
-      w: Math.max(1, pageW - margin * 2),
-      h: Math.max(1, pageH - margin * 2)
-    };
-
     const pages = [];
-    let currentPage = createEmptyPage(usable);
+    let page = { items: [] };
+    let x = margin;
+    let y = margin;
+    let rowH = 0;
 
     tiles.forEach((tile) => {
-      const placed = placeTileInPage(currentPage, tile, gap);
-      if (!placed) {
-        pages.push(currentPage);
-        currentPage = createEmptyPage(usable);
-        const fallbackPlaced = placeTileInPage(currentPage, tile, gap);
-        if (!fallbackPlaced) {
-          const clipped = {
-            ...tile,
-            x: usable.x,
-            y: usable.y,
-            tileW: Math.min(tile.tileW, usable.w),
-            tileH: Math.min(tile.tileH, usable.h),
-            rotated: false
-          };
-          currentPage.items.push(clipped);
-        }
+      if (x + tile.tileW > pageW - margin + 0.01) {
+        x = margin;
+        y += rowH + gap;
+        rowH = 0;
+      }
+
+      if (y + tile.tileH > pageH - margin + 0.01) {
+        centerRows(page.items, margin, usableW);
+        pages.push(page);
+        page = { items: [] };
+        x = margin;
+        y = margin;
+        rowH = 0;
+      }
+
+      if (tile.tileW > usableW || tile.tileH > usableH) {
+        page.items.push({
+          ...tile,
+          x: margin,
+          y: margin,
+          tileW: Math.min(tile.tileW, usableW),
+          tileH: Math.min(tile.tileH, usableH)
+        });
+      } else {
+        page.items.push({ ...tile, x, y });
+        x += tile.tileW + gap;
+        rowH = Math.max(rowH, tile.tileH);
       }
     });
 
-    if (currentPage.items.length || !pages.length) pages.push(currentPage);
+    if (page.items.length || !pages.length) {
+      centerRows(page.items, margin, usableW);
+      pages.push(page);
+    }
     return { pages, pageW, pageH, margin, paperLabel: paper.name, defaultPassport };
   }
 
-  function createEmptyPage(usableRect) {
-    return {
-      items: [],
-      freeRects: [{ x: usableRect.x, y: usableRect.y, w: usableRect.w, h: usableRect.h }]
-    };
+  function chooseBestOrientation(w, h, usableW, usableH, gap) {
+    const normalCols = Math.max(0, Math.floor((usableW + gap) / (w + gap)));
+    const normalRows = Math.max(0, Math.floor((usableH + gap) / (h + gap)));
+    const normalCapacity = normalCols * normalRows;
+
+    const rotatedCols = Math.max(0, Math.floor((usableW + gap) / (h + gap)));
+    const rotatedRows = Math.max(0, Math.floor((usableH + gap) / (w + gap)));
+    const rotatedCapacity = rotatedCols * rotatedRows;
+
+    if (rotatedCapacity > normalCapacity) {
+      return { w: h, h: w, rotated: true };
+    }
+    return { w, h, rotated: false };
   }
 
-  function placeTileInPage(page, tile, gap) {
-    let best = null;
-    page.freeRects.forEach((rect, rectIndex) => {
-      const options = [
-        { w: tile.tileW, h: tile.tileH, rotated: false },
-        { w: tile.tileH, h: tile.tileW, rotated: true }
-      ];
-      options.forEach((opt) => {
-        if (opt.w <= rect.w && opt.h <= rect.h) {
-          const waste = rect.w * rect.h - opt.w * opt.h;
-          const shortSideLeftover = Math.min(rect.w - opt.w, rect.h - opt.h);
-          if (
-            !best ||
-            waste < best.waste ||
-            (waste === best.waste && shortSideLeftover < best.shortSideLeftover)
-          ) {
-            best = { rectIndex, rect, opt, waste, shortSideLeftover };
-          }
-        }
+  function centerRows(items, margin, usableW) {
+    if (!items.length) return;
+    const rows = new Map();
+    items.forEach((item) => {
+      const key = String(Math.round(item.y * 100) / 100);
+      if (!rows.has(key)) rows.set(key, []);
+      rows.get(key).push(item);
+    });
+
+    rows.forEach((rowItems) => {
+      let minX = Number.POSITIVE_INFINITY;
+      let maxX = Number.NEGATIVE_INFINITY;
+      rowItems.forEach((item) => {
+        minX = Math.min(minX, item.x);
+        maxX = Math.max(maxX, item.x + item.tileW);
       });
-    });
-
-    if (!best) return false;
-
-    const placed = {
-      ...tile,
-      x: best.rect.x,
-      y: best.rect.y,
-      tileW: best.opt.w,
-      tileH: best.opt.h,
-      rotated: best.opt.rotated
-    };
-    page.items.push(placed);
-
-    splitFreeRects(page, best.rectIndex, placed, gap);
-    pruneContainedFreeRects(page);
-    return true;
-  }
-
-  function splitFreeRects(page, usedRectIndex, placed, gap) {
-    const used = page.freeRects[usedRectIndex];
-    const px = placed.x;
-    const py = placed.y;
-    const pw = placed.tileW;
-    const ph = placed.tileH;
-
-    page.freeRects.splice(usedRectIndex, 1);
-
-    const right = {
-      x: px + pw + gap,
-      y: used.y,
-      w: used.x + used.w - (px + pw + gap),
-      h: used.h
-    };
-    const bottom = {
-      x: used.x,
-      y: py + ph + gap,
-      w: used.w,
-      h: used.y + used.h - (py + ph + gap)
-    };
-    const left = {
-      x: used.x,
-      y: used.y,
-      w: px - used.x - gap,
-      h: used.h
-    };
-    const top = {
-      x: used.x,
-      y: used.y,
-      w: used.w,
-      h: py - used.y - gap
-    };
-
-    [right, bottom, left, top].forEach((rect) => {
-      if (rect.w > 1 && rect.h > 1) {
-        page.freeRects.push(rect);
-      }
-    });
-  }
-
-  function pruneContainedFreeRects(page) {
-    page.freeRects = page.freeRects.filter((rect, index, all) => {
-      return !all.some((other, otherIndex) => {
-        if (index === otherIndex) return false;
-        return rect.x >= other.x && rect.y >= other.y && rect.x + rect.w <= other.x + other.w && rect.y + rect.h <= other.y + other.h;
+      const rowWidth = maxX - minX;
+      const targetStart = margin + Math.max(0, (usableW - rowWidth) / 2);
+      const shift = targetStart - minX;
+      rowItems.forEach((item) => {
+        item.x += shift;
       });
     });
   }

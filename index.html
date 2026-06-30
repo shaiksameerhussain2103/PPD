@@ -3,368 +3,204 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#101827" />
-  <title>PhotoPrint Studio Pro</title>
+  <meta name="theme-color" content="#0e1f31" />
+  <title>Passport Photo Sheet Designer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar glass">
-      <div class="brand" role="banner">
-        <div class="brand-mark" aria-hidden="true">
-          <span></span><span></span><span></span>
-        </div>
+  <div class="bg-orb orb-a"></div>
+  <div class="bg-orb orb-b"></div>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-badge" aria-hidden="true">PP</div>
         <div>
-          <div class="brand-title">PhotoPrint Studio Pro</div>
-          <div class="brand-subtitle">Frontend-only passport photo sheet generator</div>
+          <h1>Passport Photo Sheet Designer</h1>
+          <p>Live browser-based layout for printing passport photos</p>
         </div>
       </div>
-
-      <nav class="topnav" aria-label="Primary navigation">
-        <button class="nav-pill active" data-nav-target="home">Home</button>
-        <button class="nav-pill" data-nav-target="preview">Print Preview</button>
-        <button class="nav-pill" data-nav-target="settings">Settings</button>
-        <button class="nav-pill" data-nav-target="help">Help</button>
-        <button class="nav-pill" data-nav-target="about">About</button>
-      </nav>
-
-      <div class="topbar-actions">
-        <button id="themeToggle" class="icon-button" type="button" aria-label="Toggle theme">◐</button>
-      </div>
+      <button id="clearAllBtn" class="btn btn-ghost" type="button">Clear All</button>
     </header>
 
-    <main class="workspace" id="home">
-      <aside class="panel sidebar left-sidebar glass">
-        <section class="panel-section upload-zone" id="uploadZone" aria-label="Upload photos">
-          <div class="section-header">
+    <section id="uploadStep" class="panel step upload-panel" aria-label="Step 1 upload images">
+      <div class="step-head">
+        <span class="step-number">Step 1</span>
+        <div>
+          <h2>Upload Images</h2>
+          <p>Drag and drop photos or browse multiple files at once.</p>
+        </div>
+      </div>
+
+      <label id="dropZone" class="drop-zone" for="fileInput">
+        <input id="fileInput" type="file" accept="image/*" multiple />
+        <div class="drop-icon" aria-hidden="true">⬆</div>
+        <strong>Drop images here</strong>
+        <span>PNG, JPG, JPEG, WEBP, BMP supported</span>
+      </label>
+      <div class="upload-actions">
+        <button id="browseBtn" class="btn btn-primary" type="button">Browse Images</button>
+        <small>Tip: You can upload any number of different photos.</small>
+      </div>
+    </section>
+
+    <main class="layout-grid">
+      <section class="left-col">
+        <section class="panel step" aria-label="Step 2 uploaded images panel">
+          <div class="step-head">
+            <span class="step-number">Step 2</span>
             <div>
-              <h2>Photos</h2>
-              <p>Drag, paste, or choose files</p>
+              <h2>Uploaded Images</h2>
+              <p id="imageCountText">0 different images</p>
             </div>
-            <button id="clearAllBtn" class="ghost-button" type="button">Clear</button>
           </div>
-          <label class="upload-card" for="fileInput">
-            <input id="fileInput" type="file" accept="image/*,.heic,.heif,.bmp" multiple />
-            <div class="upload-icon">⬆</div>
-            <strong>Drop images here</strong>
-            <span>PNG, JPEG, JPG, WEBP, BMP, HEIC if supported</span>
-          </label>
-          <div class="upload-hint">Paste with Ctrl+V. Multiple images supported.</div>
+          <div id="imageCards" class="cards"></div>
         </section>
 
-        <section class="panel-section image-list-section">
-          <div class="section-header">
+        <section class="panel step" aria-label="Step 4 paper settings">
+          <div class="step-head">
+            <span class="step-number">Step 4</span>
             <div>
-              <h2>Image Cards</h2>
-              <p id="imageCountLabel">0 images</p>
-            </div>
-            <div class="compact-actions">
-              <button id="selectAllBtn" class="ghost-button" type="button">Select All</button>
-              <button id="generateLayoutBtn" class="ghost-button" type="button">Generate</button>
+              <h2>Paper Settings</h2>
+              <p>Choose paper preset or custom dimensions.</p>
             </div>
           </div>
-          <div id="imageList" class="image-list" aria-live="polite"></div>
-        </section>
-      </aside>
-
-      <section class="panel preview-panel glass" id="preview" aria-label="Print preview">
-        <div class="section-header preview-toolbar">
-          <div>
-            <h2>Live Preview</h2>
-            <p id="previewMeta">Ready to render</p>
-          </div>
-          <div class="toolbar-group">
-            <button id="prevPageBtn" class="ghost-button" type="button">Prev</button>
-            <button id="nextPageBtn" class="ghost-button" type="button">Next</button>
-            <span id="pageIndicator" class="page-indicator">Page 1 / 1</span>
-          </div>
-        </div>
-
-        <div class="preview-controls">
-          <div class="zoom-group" role="group" aria-label="Zoom controls">
-            <button class="zoom-btn" data-zoom="25">25%</button>
-            <button class="zoom-btn" data-zoom="50">50%</button>
-            <button class="zoom-btn" data-zoom="75">75%</button>
-            <button class="zoom-btn active" data-zoom="100">100%</button>
-            <button class="zoom-btn" data-zoom="125">125%</button>
-            <button class="zoom-btn" data-zoom="150">150%</button>
-            <button class="zoom-btn" data-zoom="200">200%</button>
-            <button class="zoom-btn" data-zoom="fit-width">Fit Width</button>
-            <button class="zoom-btn" data-zoom="fit-height">Fit Height</button>
-            <button class="zoom-btn" data-zoom="fit-screen">Fit Screen</button>
-          </div>
-          <div class="view-toggles">
-            <label><input id="showRulersToggle" type="checkbox" checked /> Rulers</label>
-            <label><input id="showBoundaryToggle" type="checkbox" checked /> Page Boundary</label>
-            <label><input id="showCutMarksToggle" type="checkbox" checked /> Cut Marks</label>
-            <label><input id="showBleedToggle" type="checkbox" /> Bleed</label>
-            <label><input id="showCropMarksToggle" type="checkbox" checked /> Crop Marks</label>
-          </div>
-        </div>
-
-        <div class="canvas-shell">
-          <div class="ruler ruler-x" aria-hidden="true"><canvas id="rulerX"></canvas></div>
-          <div class="ruler ruler-y" aria-hidden="true"><canvas id="rulerY"></canvas></div>
-          <div id="previewViewport" class="preview-viewport" tabindex="0" aria-label="Preview canvas viewport">
-            <div id="previewCanvasWrap" class="preview-canvas-wrap">
-              <canvas id="sheetCanvas"></canvas>
-              <div id="interactionLayer" class="interaction-layer" aria-hidden="true"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="status-bar">
-          <div id="resolutionLabel">300 DPI mode</div>
-          <div id="pageSizeLabel">A4 · 210 × 297 mm</div>
-          <div id="safetyLabel">Actual size printing enabled</div>
-        </div>
-      </section>
-
-      <aside class="panel sidebar right-sidebar glass" id="settings">
-        <section class="panel-section">
-          <div class="section-header">
-            <div>
-              <h2>Layout</h2>
-              <p>Page, preset, and packing</p>
-            </div>
-            <button id="printBtn" class="primary-button" type="button">Print</button>
-          </div>
-
-          <div class="form-grid two-col">
-            <label>
-              <span>Passport Preset</span>
-              <select id="passportPresetSelect"></select>
-            </label>
+          <div class="field-grid two">
             <label>
               <span>Paper Size</span>
               <select id="paperSizeSelect"></select>
             </label>
-            <label>
-              <span>Paper Width</span>
-              <input id="paperWidthInput" type="number" min="10" step="0.1" />
-            </label>
-            <label>
-              <span>Paper Height</span>
-              <input id="paperHeightInput" type="number" min="10" step="0.1" />
-            </label>
-            <label>
-              <span>Units</span>
-              <select id="measurementUnitSelect">
-                <option value="mm">Millimeters</option>
-                <option value="cm">Centimeters</option>
-                <option value="in">Inches</option>
-                <option value="px">Pixels</option>
+            <label id="paperUnitWrap" class="hidden">
+              <span>Unit</span>
+              <select id="paperUnitSelect">
+                <option value="mm">mm</option>
+                <option value="cm">cm</option>
+                <option value="in">inch</option>
               </select>
             </label>
-            <label>
-              <span>Layout Mode</span>
-              <select id="layoutModeSelect">
-                <option value="auto">Auto Grid</option>
-                <option value="manual">Manual Grid</option>
-                <option value="free">Free Position</option>
-              </select>
+            <label id="paperWidthWrap" class="hidden">
+              <span>Width</span>
+              <input id="paperWidthInput" type="number" min="1" step="0.1" />
             </label>
-          </div>
-
-          <div class="form-grid two-col">
-            <label>
-              <span>Horizontal Gap</span>
-              <input id="gapXInput" type="number" min="0" step="0.1" />
+            <label id="paperHeightWrap" class="hidden">
+              <span>Height</span>
+              <input id="paperHeightInput" type="number" min="1" step="0.1" />
             </label>
-            <label>
-              <span>Vertical Gap</span>
-              <input id="gapYInput" type="number" min="0" step="0.1" />
-            </label>
-            <label>
-              <span>Margin</span>
-              <input id="defaultMarginInput" type="number" min="0" step="0.1" />
-            </label>
-            <label>
-              <span>Padding</span>
-              <input id="defaultPaddingInput" type="number" min="0" step="0.1" />
-            </label>
-            <label>
-              <span>Safe Margin</span>
-              <input id="safeMarginInput" type="number" min="0" step="0.1" />
-            </label>
-            <label>
-              <span>Cut Margin</span>
-              <input id="cutMarginInput" type="number" min="0" step="0.1" />
-            </label>
-          </div>
-
-          <div class="inline-switches">
-            <label><input id="autoCenterToggle" type="checkbox" checked /> Auto Center</label>
-            <label><input id="autoFillToggle" type="checkbox" checked /> Auto Fill</label>
-            <label><input id="equalSpacingToggle" type="checkbox" checked /> Equal Spacing</label>
-            <label><input id="snapGridToggle" type="checkbox" checked /> Snap to Grid</label>
-            <label><input id="highDpiToggle" type="checkbox" checked /> High DPI Mode</label>
           </div>
         </section>
 
-        <section class="panel-section">
-          <div class="section-header">
+        <section class="panel step" aria-label="Step 5 passport settings">
+          <div class="step-head">
+            <span class="step-number">Step 5</span>
             <div>
-              <h2>Export</h2>
-              <p>Download or print directly</p>
+              <h2>Passport Size</h2>
+              <p>Default size applied unless image card has overrides.</p>
             </div>
           </div>
-          <div class="form-grid two-col">
+          <div class="field-grid two">
             <label>
-              <span>Export DPI</span>
-              <select id="dpiSelect">
-                <option value="300">300 DPI</option>
-                <option value="600">600 DPI</option>
+              <span>Preset</span>
+              <select id="passportPresetSelect"></select>
+            </label>
+            <label id="passportUnitWrap" class="hidden">
+              <span>Unit</span>
+              <select id="passportUnitSelect">
+                <option value="mm">mm</option>
+                <option value="cm">cm</option>
+                <option value="in">inch</option>
               </select>
             </label>
-            <label>
-              <span>Quality</span>
-              <select id="qualitySelect">
-                <option value="0.95">High</option>
-                <option value="0.9">Balanced</option>
-                <option value="1">Lossless PNG</option>
-              </select>
+            <label id="passportWidthWrap" class="hidden">
+              <span>Width</span>
+              <input id="passportWidthInput" type="number" min="1" step="0.1" />
+            </label>
+            <label id="passportHeightWrap" class="hidden">
+              <span>Height</span>
+              <input id="passportHeightInput" type="number" min="1" step="0.1" />
             </label>
           </div>
-          <div class="button-stack">
-            <button id="exportPngBtn" class="secondary-button" type="button">Download PNG</button>
-            <button id="exportJpegBtn" class="secondary-button" type="button">Download JPEG</button>
-            <button id="exportPdfBtn" class="secondary-button" type="button">Download PDF</button>
-            <button id="exportSvgBtn" class="secondary-button" type="button">Download SVG</button>
+        </section>
+      </section>
+
+      <section class="mid-col">
+        <section class="panel step" aria-label="Step 3 live sheet preview">
+          <div class="step-head preview-head">
+            <span class="step-number">Step 3</span>
+            <div>
+              <h2>Live Sheet Preview</h2>
+              <p id="previewMeta">Preview updates in real time.</p>
+            </div>
+            <div class="preview-nav">
+              <button id="prevPageBtn" class="btn btn-ghost" type="button">Prev</button>
+              <span id="pageIndicator">Page 1 / 1</span>
+              <button id="nextPageBtn" class="btn btn-ghost" type="button">Next</button>
+            </div>
+          </div>
+
+          <div class="preview-toggles">
+            <label><input id="showCutMarks" type="checkbox" checked /> Cut Marks</label>
+            <label><input id="showCropMarks" type="checkbox" checked /> Crop Marks</label>
+            <label><input id="showRulers" type="checkbox" /> Rulers</label>
+          </div>
+
+          <div class="preview-shell">
+            <canvas id="sheetCanvas"></canvas>
           </div>
         </section>
 
-        <section class="panel-section" id="help">
-          <div class="section-header">
+        <section class="panel step" aria-label="Step 7 download and print">
+          <div class="step-head">
+            <span class="step-number">Step 7</span>
             <div>
-              <h2>Settings</h2>
-              <p>Preferences and saved presets</p>
+              <h2>Download And Print</h2>
+              <p>Export high-quality sheets or print directly.</p>
             </div>
-            <button id="savePresetBtn" class="ghost-button" type="button">Save Preset</button>
           </div>
-          <div class="form-grid two-col">
-            <label>
-              <span>Language</span>
-              <select id="languageSelect">
-                <option value="en">English</option>
-              </select>
-            </label>
-            <label>
-              <span>Theme</span>
-              <select id="themeSelect">
-                <option value="system">System</option>
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-              </select>
-            </label>
-            <label>
-              <span>Default Paper Size</span>
-              <select id="defaultPaperSizeSelect"></select>
-            </label>
-            <label>
-              <span>Default Passport Size</span>
-              <select id="defaultPassportSizeSelect"></select>
-            </label>
-          </div>
-          <div class="form-grid two-col">
-            <label>
-              <span>Default Gap</span>
-              <input id="defaultGapInput" type="number" min="0" step="0.1" />
-            </label>
-            <label>
-              <span>Default Margin</span>
-              <input id="defaultPageMarginInput" type="number" min="0" step="0.1" />
-            </label>
-          </div>
-          <div class="inline-switches">
-            <label><input id="autosaveToggle" type="checkbox" checked /> Autosave</label>
-            <label><input id="animationsToggle" type="checkbox" checked /> Animations</label>
-            <label><input id="highContrastToggle" type="checkbox" /> High Contrast</label>
-          </div>
-          <div class="button-stack compact">
-            <button id="resetSettingsBtn" class="ghost-button" type="button">Reset Settings</button>
-            <button id="printGuideBtn" class="ghost-button" type="button">Open Printing Guide</button>
+          <div class="download-actions">
+            <button id="downloadPngBtn" class="btn btn-secondary" type="button">Download Sheet (PNG)</button>
+            <button id="downloadJpegBtn" class="btn btn-secondary" type="button">Download Sheet (JPEG)</button>
+            <button id="downloadPdfBtn" class="btn btn-secondary" type="button">Download Sheet (PDF)</button>
+            <button id="printBtn" class="btn btn-primary" type="button">Print Sheet</button>
           </div>
         </section>
+      </section>
 
-        <section class="panel-section">
-          <div class="section-header">
+      <section class="right-col">
+        <section class="panel step" aria-label="Step 6 live statistics">
+          <div class="step-head">
+            <span class="step-number">Step 6</span>
             <div>
-              <h2>Help</h2>
-              <p>Quick printing guide</p>
+              <h2>Live Statistics</h2>
+              <p>Automatically updated sheet analytics.</p>
             </div>
           </div>
-          <div class="help-copy">
-            <p><strong>Upload:</strong> use drag and drop, file picker, or Ctrl+V.</p>
-            <p><strong>Print:</strong> use Actual Size / 100% for passport photos.</p>
-            <p><strong>Export:</strong> PNG, JPEG, PDF, and SVG are generated fully in-browser.</p>
-            <p><strong>Indian passport recommendation:</strong> 35 × 45 mm on 4×6 glossy paper, usually 8 photos per sheet.</p>
-            <p><strong>A4 vs 4×6:</strong> same photo size, but A4 leaves extra white space.</p>
+          <div class="stats-grid">
+            <article><h3 id="statDifferentImages">0</h3><p>Total Different Images</p></article>
+            <article><h3 id="statTotalCopies">0</h3><p>Total Copies</p></article>
+            <article><h3 id="statPaperSize">4x6</h3><p>Paper Size</p></article>
+            <article><h3 id="statPrintSize">35x45 mm</h3><p>Estimated Print Size</p></article>
+            <article><h3 id="statUtilization">0%</h3><p>Sheet Utilization</p></article>
+            <article><h3 id="statRemaining">100%</h3><p>Remaining Empty Area</p></article>
           </div>
         </section>
-
-        <section class="panel-section" id="about">
-          <div class="section-header">
-            <div>
-              <h2>About</h2>
-              <p>Offline, frontend-only, production-ready</p>
-            </div>
-          </div>
-          <div class="about-copy">
-            <p>PhotoPrint Studio Pro runs entirely inside the browser with canvas-based rendering, high-DPI export, and print-aware CSS.</p>
-            <p>This build is static and deployable to Netlify, Vercel, or GitHub Pages without configuration.</p>
-          </div>
-        </section>
-      </aside>
+      </section>
     </main>
 
-    <section class="print-guide glass">
-      <div class="section-header">
-        <div>
-          <h2>Printing Guide</h2>
-          <p>Recommended settings for passport sheets</p>
-        </div>
+    <div id="printPages" class="print-pages" aria-hidden="true"></div>
+
+    <footer class="footer panel">
+      <div>
+        Developed by
+        <a href="https://www.linkedin.com/in/shaik-sameer-hussain-b88323250/" target="_blank" rel="noopener noreferrer">Shaik Sameer Hussain</a>
       </div>
-      <div class="guide-grid">
-        <article>
-          <h3>Indian Passport Photos</h3>
-          <p>Photo size: 35 × 45 mm</p>
-          <p>Recommended paper: 4×6 glossy photo paper (4R)</p>
-          <p>Typical output: 8 passport photos per sheet</p>
-        </article>
-        <article>
-          <h3>Printing Advice</h3>
-          <p>Use Actual Size / Scale 100%</p>
-          <p>Do not use Fit to Page for passport photos</p>
-          <p>Extra white space on A4 is expected</p>
-        </article>
+      <div class="footer-meta">
+        <span>Frontend Only</span>
+        <span>Works Offline</span>
+        <span>Deployable on Netlify</span>
+        <span>Version 2.0.0</span>
       </div>
-    </section>
+    </footer>
   </div>
-
-  <div id="toastHost" class="toast-host" aria-live="polite" aria-atomic="true"></div>
-
-  <div id="modalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
-    <div class="modal glass" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <h3 id="modalTitle">Save Custom Preset</h3>
-      <p id="modalText">Store the current passport size as a reusable preset.</p>
-      <label>
-        <span>Preset Name</span>
-        <input id="modalInput" type="text" />
-      </label>
-      <div class="modal-actions">
-        <button id="modalCancelBtn" class="ghost-button" type="button">Cancel</button>
-        <button id="modalConfirmBtn" class="primary-button" type="button">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <footer class="footer glass">
-    <div>Developed with <span class="heart">♥</span> by <a href="https://www.linkedin.com/in/shaik-sameer-hussain-b88323250/" target="_blank" rel="noopener noreferrer">Shaik Sameer Hussain</a></div>
-    <div class="footer-meta">
-      <span>Version 1.0.0</span>
-    </div>
-  </footer>
 
   <script src="script.js"></script>
 </body>

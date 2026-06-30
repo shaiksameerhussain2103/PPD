@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0e1f31" />
+  <title>Passport Photo Sheet Designer</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23231a42'/%3E%3Cstop offset='1' stop-color='%23110d24'/%3E%3C/linearGradient%3E%3ClinearGradient id='gold' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f6da7b'/%3E%3Cstop offset='1' stop-color='%23b78626'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Cpath d='M11 45h42l-3 9H14z' fill='url(%23gold)'/%3E%3Cpath d='M12 44L18 20l14 12 14-12 6 24z' fill='url(%23gold)'/%3E%3Ccircle cx='18' cy='20' r='3' fill='%23f7edc0'/%3E%3Ccircle cx='32' cy='12' r='3.5' fill='%23f7edc0'/%3E%3Ccircle cx='46' cy='20' r='3' fill='%23f7edc0'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-orb orb-a"></div>
+  <div class="bg-orb orb-b"></div>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-badge" aria-hidden="true">PP</div>
+        <div>
+          <h1>Passport Photo Sheet Designer</h1>
+          <p>Live browser-based layout for printing passport photos</p>
+        </div>
+      </div>
+      <button id="clearAllBtn" class="btn btn-ghost" type="button">Clear All</button>
+    </header>
+
+    <section id="uploadStep" class="panel step upload-panel" aria-label="Step 1 upload images">
+      <div class="step-head">
+        <span class="step-number">Step 1</span>
+        <div>
+          <h2>Upload Images</h2>
+          <p>Drag and drop photos or browse multiple files at once.</p>
+        </div>
+      </div>
+
+      <label id="dropZone" class="drop-zone" for="fileInput">
+        <input id="fileInput" type="file" accept="image/*" multiple />
+        <div class="drop-icon" aria-hidden="true">⬆</div>
+        <strong>Drop images here</strong>
+        <span>PNG, JPG, JPEG, WEBP, BMP supported</span>
+      </label>
+      <div class="upload-actions">
+        <button id="browseBtn" class="btn btn-primary" type="button">Browse Images</button>
+        <small>Tip: You can upload any number of different photos.</small>
+      </div>
+    </section>
+
+    <main class="simple-flow">
+      <section class="panel step" aria-label="Step 2 uploaded images panel">
+        <div class="step-head">
+          <span class="step-number">Step 2</span>
+          <div>
+            <h2>Uploaded Images</h2>
+            <p id="imageCountText">0 different images</p>
+          </div>
+        </div>
+        <div class="image-rows-head" aria-hidden="true">
+          <span>Image</span>
+          <span>Copies</span>
+          <span>Size (optional)</span>
+          <span>Actions</span>
+        </div>
+        <div id="imageRows" class="image-rows"></div>
+      </section>
+
+      <section class="panel step" aria-label="Step 3 preview and sheet settings">
+        <div class="step-head">
+          <span class="step-number">Step 3</span>
+          <div>
+            <h2>Sheet Preview</h2>
+            <p id="previewMeta">Preview updates in real time.</p>
+          </div>
+          <div class="preview-nav">
+            <button id="prevPageBtn" class="btn btn-ghost" type="button">Prev</button>
+            <span id="pageIndicator">Page 1 / 1</span>
+            <button id="nextPageBtn" class="btn btn-ghost" type="button">Next</button>
+          </div>
+        </div>
+
+        <div class="field-grid four">
+          <label>
+            <span>Sheet Size</span>
+            <select id="paperSizeSelect"></select>
+          </label>
+          <label>
+            <span>Default Passport Size</span>
+            <select id="passportPresetSelect"></select>
+          </label>
+          <label id="paperUnitWrap" class="hidden">
+            <span>Sheet Unit</span>
+            <select id="paperUnitSelect">
+              <option value="mm">mm</option>
+              <option value="cm">cm</option>
+              <option value="in">inch</option>
+            </select>
+          </label>
+          <label id="paperWidthWrap" class="hidden">
+            <span>Sheet Width</span>
+            <input id="paperWidthInput" type="number" min="1" step="0.1" />
+          </label>
+          <label id="paperHeightWrap" class="hidden">
+            <span>Sheet Height</span>
+            <input id="paperHeightInput" type="number" min="1" step="0.1" />
+          </label>
+          <label id="passportUnitWrap" class="hidden">
+            <span>Passport Unit</span>
+            <select id="passportUnitSelect">
+              <option value="mm">mm</option>
+              <option value="cm">cm</option>
+              <option value="in">inch</option>
+            </select>
+          </label>
+          <label id="passportWidthWrap" class="hidden">
+            <span>Passport Width</span>
+            <input id="passportWidthInput" type="number" min="1" step="0.1" />
+          </label>
+          <label id="passportHeightWrap" class="hidden">
+            <span>Passport Height</span>
+            <input id="passportHeightInput" type="number" min="1" step="0.1" />
+          </label>
+        </div>
+
+        <div class="preview-toggles">
+          <label><input id="showCutMarks" type="checkbox" checked /> Cut Marks</label>
+          <label><input id="showCropMarks" type="checkbox" checked /> Crop Marks</label>
+          <label><input id="showRulers" type="checkbox" /> Rulers</label>
+        </div>
+
+        <div class="preview-shell">
+          <canvas id="sheetCanvas"></canvas>
+        </div>
+      </section>
+
+      <section class="panel step" aria-label="Step 4 download and print">
+        <div class="step-head">
+          <span class="step-number">Step 4</span>
+          <div>
+            <h2>Download And Print</h2>
+            <p>Export as PNG, JPEG, PDF, or print directly.</p>
+          </div>
+        </div>
+        <div class="download-actions">
+          <button id="downloadPngBtn" class="btn btn-secondary" type="button">Download PNG</button>
+          <button id="downloadJpegBtn" class="btn btn-secondary" type="button">Download JPEG</button>
+          <button id="downloadPdfBtn" class="btn btn-secondary" type="button">Download PDF</button>
+          <button id="printBtn" class="btn btn-primary" type="button">Print Sheet</button>
+        </div>
+      </section>
+    </main>
+
+    <div id="printPages" class="print-pages" aria-hidden="true"></div>
+
+    <footer class="footer panel">
+      <div>
+        Developed by
+        <a href="https://www.linkedin.com/in/shaik-sameer-hussain-b88323250/" target="_blank" rel="noopener noreferrer">Shaik Sameer Hussain</a>
+      </div>
+      <div class="footer-meta">
+        <span>Version 2.0.0</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

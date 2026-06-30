@@ -249,6 +249,14 @@
     });
 
     els.imageRows.querySelectorAll('[data-field]').forEach((input) => {
+      if (input.type === 'number') {
+        input.addEventListener('wheel', (event) => {
+          if (document.activeElement === input) {
+            event.preventDefault();
+          }
+        }, { passive: false });
+      }
+
       input.addEventListener('input', () => {
         const id = input.dataset.id;
         const field = input.dataset.field;
@@ -258,13 +266,30 @@
         if (input.type === 'checkbox') {
           image[field] = input.checked;
         } else if (field === 'copies') {
-          image.copies = Math.max(1, Number(input.value) || 1);
+          const raw = String(input.value).trim();
+          if (!raw) return;
+          const parsed = Math.floor(Number(raw));
+          if (!Number.isFinite(parsed) || parsed < 1) return;
+          image.copies = parsed;
         } else {
           image[field] = input.value;
         }
 
         renderPreview();
       });
+
+      if (input.dataset.field === 'copies') {
+        input.addEventListener('blur', () => {
+          const id = input.dataset.id;
+          const image = state.images.find((item) => item.id === id);
+          if (!image) return;
+
+          const parsed = Math.floor(Number(input.value));
+          image.copies = Number.isFinite(parsed) && parsed >= 1 ? parsed : Math.max(1, Number(image.copies) || 1);
+          input.value = String(image.copies);
+          renderPreview();
+        });
+      }
     });
 
     els.imageRows.querySelectorAll('[data-action]').forEach((btn) => {
